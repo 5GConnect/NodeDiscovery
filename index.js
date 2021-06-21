@@ -1,24 +1,49 @@
 'use strict';
 
+var dotenv = require('dotenv')
+if (process.env.NODE_ENV === 'development') {
+    dotenv.config({ path: './.env-dev' })
+}
+
 var path = require('path');
 var http = require('http');
+const ws = require('ws');
 
-var oas3Tools = require('oas3-tools');
-var serverPort = 8080;
+//const logger = require('./utils/logger');
+var serverPort = process.env.PORT;
+var oasTools = require('oas-tools');
+var jsyaml = require('js-yaml');
+var fs = require('fs');
+var express = require('express');
+
+
+global.logger = require('./utils/logger');
+
 
 // swaggerRouter configuration
 var options = {
-    routing: {
-        controllers: path.join(__dirname, './controllers')
-    },
+    loglevel: 'info',
+    controllers: path.join(__dirname, './controllers')
 };
+oasTools.configure(options)
+var spec = fs.readFileSync(path.join(__dirname, './api/openapi.yaml'), 'utf8');
+var oasDoc = jsyaml.safeLoad(spec);
+var app = express();
 
-var expressAppConfig = oas3Tools.expressAppConfig(path.join(__dirname, 'api/openapi.yaml'), options);
-var app = expressAppConfig.getApp();
+app.use(express.json())
 
-// Initialize the Swagger middleware
-http.createServer(app).listen(serverPort, function () {
-    console.log('Your server is listening on port %d (http://localhost:%d)', serverPort, serverPort);
-    console.log('Swagger-ui is available on http://localhost:%d/docs', serverPort);
+oasTools.initialize(oasDoc, app, function() {
+    // Initialize the Swagger middleware
+    let server = http.createServer(app).listen(serverPort, function() {
+        logger.info(`Your server is listening on port ${serverPort}`);
+    });
+    const wss = new ws.Server({ server: server });
+    module.exports = wss;
+    wss.on('connection', (ws) => {
+        logger.info('Client connected');
+        ws.on('close', () => {
+            logger.info('Client disconnected')
+        });
+    });
 });
 

@@ -3,14 +3,11 @@ info:
   title: NodeDiscovery
   description: A simple registry service to discover active/faulty node.
   version: 1.0.0
-servers:
-- url: https://virtserver.swaggerhub.com/giacomotontini/5GConnect/1
-  description: SwaggerHub API Auto Mocking
 paths:
   /UE:
     get:
       summary: Retrieve all active UE digital entities endpoint.
-      operationId: uEGET
+      operationId: getActiveUEs
       responses:
         "200":
           description: OK
@@ -26,7 +23,7 @@ paths:
     post:
       summary: "Register as a new UE digital entity to the registry, or keep alive\
         \ an old one"
-      operationId: uEPOST
+      operationId: registerOrUpdateUE
       requestBody:
         content:
           application/json:
@@ -41,7 +38,7 @@ paths:
   /UE/{imsi}:
     delete:
       summary: De-register a UE digital entity from the registry
-      operationId: uEImsiDELETE
+      operationId: unregisterUE
       parameters:
       - name: imsi
         in: path

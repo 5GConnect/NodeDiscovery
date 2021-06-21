@@ -1,0 +1,111 @@
+openapi: 3.0.0
+info:
+  title: NodeDiscovery
+  description: A simple registry service to discover active/faulty node.
+  version: 1.0.0
+servers:
+- url: https://virtserver.swaggerhub.com/giacomotontini/5GConnect/1
+  description: SwaggerHub API Auto Mocking
+paths:
+  /UE:
+    get:
+      summary: Retrieve all active UE digital entities endpoint.
+      operationId: uEGET
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                minItems: 0
+                type: array
+                items:
+                  $ref: '#/components/schemas/DiscoveredUE'
+                x-content-type: application/json
+      x-swagger-router-controller: Default
+    post:
+      summary: "Register as a new UE digital entity to the registry, or keep alive\
+        \ an old one"
+      operationId: uEPOST
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Supi'
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Invalid imsi pattern.
+      x-swagger-router-controller: Default
+  /UE/{imsi}:
+    delete:
+      summary: De-register a UE digital entity from the registry
+      operationId: uEImsiDELETE
+      parameters:
+      - name: imsi
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          $ref: '#/components/schemas/Supi'
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Invalid imsi pattern.
+      x-swagger-router-controller: Default
+components:
+  schemas:
+    Supi:
+      pattern: "^(imsi-[0-9]{5,15}|nai-.+|gci-.+|gli-.+|.+)$"
+      type: string
+    IpAddress:
+      type: object
+      properties:
+        ipv4Addr:
+          $ref: '#/components/schemas/Ipv4Addr'
+        ipv6Addr:
+          $ref: '#/components/schemas/Ipv6Addr'
+        ipv6Prefix:
+          $ref: '#/components/schemas/Ipv6Prefix'
+      example:
+        ipv6Addr: ""
+        ipv4Addr: ipv4Addr
+        ipv6Prefix: ""
+      oneOf:
+      - required:
+        - ipv4Addr
+      - required:
+        - ipv6Addr
+      - required:
+        - ipv6Prefix
+    Ipv4Addr:
+      pattern: "^(([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])$"
+      type: string
+    Ipv6Addr:
+      type: string
+      allOf:
+      - pattern: "^((:|(0?|([1-9a-f][0-9a-f]{0,3}))):)((0?|([1-9a-f][0-9a-f]{0,3})):){0,6}(:|(0?|([1-9a-f][0-9a-f]{0,3})))$"
+      - pattern: "^((([^:]+:){7}([^:]+))|((([^:]+:)[^:]+)?::(([^:]+:)[^:]+)?))$"
+    Ipv6Prefix:
+      type: string
+      allOf:
+      - pattern: "^((:|(0?|([1-9a-f][0-9a-f]{0,3}))):)((0?|([1-9a-f][0-9a-f]{0,3})):){0,6}(:|(0?|([1-9a-f][0-9a-f]{0,3})))(\\\
+          \\ /(([0-9])|([0-9]{2})|(1[0-1][0-9])|(12[0-8])))$"
+      - pattern: "^((([^:]+:){7}([^:]+))|((([^:]+:)[^:]+)?::(([^:]+:)[^:]+)?))(\\\
+          \ /.+)$"
+    DiscoveredUE:
+      type: object
+      properties:
+        supi:
+          $ref: '#/components/schemas/Supi'
+        ip:
+          $ref: '#/components/schemas/IpAddress'
+      example:
+        ip:
+          ipv6Addr: ""
+          ipv4Addr: ipv4Addr
+          ipv6Prefix: ""
+        supi: supi

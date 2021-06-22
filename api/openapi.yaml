@@ -17,7 +17,7 @@ paths:
                 minItems: 0
                 type: array
                 items:
-                  $ref: '#/components/schemas/DiscoveredUE'
+                  $ref: '#/components/schemas/UEendpoint'
                 x-content-type: application/json
       x-swagger-router-controller: Default
     post:
@@ -28,19 +28,19 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Supi'
+              $ref: '#/components/schemas/UEendpoint'
       responses:
         "200":
           description: OK
         "400":
           description: Invalid imsi pattern.
       x-swagger-router-controller: Default
-  /UE/{imsi}:
+  /UE/{supi}:
     delete:
       summary: De-register a UE digital entity from the registry
       operationId: unregisterUE
       parameters:
-      - name: imsi
+      - name: supi
         in: path
         required: true
         style: simple
@@ -93,16 +93,12 @@ components:
           \\ /(([0-9])|([0-9]{2})|(1[0-1][0-9])|(12[0-8])))$"
       - pattern: "^((([^:]+:){7}([^:]+))|((([^:]+:)[^:]+)?::(([^:]+:)[^:]+)?))(\\\
           \ /.+)$"
-    DiscoveredUE:
+    UEendpoint:
       type: object
       properties:
         supi:
           $ref: '#/components/schemas/Supi'
         ip:
           $ref: '#/components/schemas/IpAddress'
-      example:
-        ip:
-          ipv6Addr: ""
-          ipv4Addr: ipv4Addr
-          ipv6Prefix: ""
-        supi: supi
+        port:
+          type: string

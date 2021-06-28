@@ -8,6 +8,7 @@ if (process.env.NODE_ENV === 'development') {
 var path = require('path');
 var http = require('http');
 const ws = require('ws');
+var cors = require('cors')
 
 //const logger = require('./utils/logger');
 var serverPort = process.env.PORT;
@@ -15,7 +16,6 @@ var oasTools = require('oas-tools');
 var jsyaml = require('js-yaml');
 var fs = require('fs');
 var express = require('express');
-
 
 global.logger = require('./utils/logger');
 
@@ -32,13 +32,21 @@ var app = express();
 
 app.use(express.json())
 
+if (process.env.NODE_ENV === 'development') {
+    app.use(cors())
+} else if (process.env.NODE_ENV === 'production') {
+    app.use(cors({
+        origin: "http://137.204.107.63:55000"
+    }))
+}
+
 oasTools.initialize(oasDoc, app, function() {
     // Initialize the Swagger middleware
     let server = http.createServer(app).listen(serverPort, function() {
         logger.info(`Your server is listening on port ${serverPort}`);
     });
-    const wss = new ws.Server({ server: server });
-    module.exports = wss;
+    global.wss = new ws.Server({ server: server });
+    //module.exports = wss;
     wss.on('connection', (ws) => {
         logger.info('Client connected');
         ws.on('close', () => {
@@ -46,4 +54,3 @@ oasTools.initialize(oasDoc, app, function() {
         });
     });
 });
-

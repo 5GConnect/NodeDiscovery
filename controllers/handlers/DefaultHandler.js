@@ -1,32 +1,37 @@
-const wss = require('../../index') 
-var CachemanMemory = require('recacheman-memory');
-var cache = new CachemanMemory();
-const ttl = 30
+const activeUsers = new Map()
+
+removeActiveUser = (supi) => {
+    activeUsers.delete(supi)
+    global.wss.clients.forEach((client) => { client.send(JSON.stringify({ supi: supi, event: 'ue_expired' })) })
+}
+
+sendUEJoined = () => {
+    global.wss.clients.forEach((client) => { client.send(JSON.stringify({ event: 'ue_joined' })) })
+}
 
 module.exports.addUEendpoint = (supi, ip, port) => {
-    cache.set(supi, {ip: ip, port: port}, ttl, function (err, value) {
-        if (err) throw err;
-        console.log('expired:', value);
-        wss.clients.forEach(element => {
-            wss.clients.forEach((client) => { client.send(JSON.stringify({supi: supi, event: 'ue_expired'})) });
-        });
-    })
+    let activeUE = activeUsers.get(supi)
+    if (activeUE !== undefined) {
+        clearTimeout(activeUE.timer)
+        activeUE.timer = setTimeout(() => removeActiveUser(supi), process.env.KEEP_ALIVE_TIME_IN_MS)
+
+    } else {
+        activeUsers.set(supi, {
+            ueInformation: { ip: ip, port: port },
+            timer: setTimeout(() => removeActiveUser(supi), process.env.KEEP_ALIVE_TIME_IN_MS)
+        })
+        sendUEJoined()
+    }
 }
 
 module.exports.invalidateUEendpoint = (supi) => {
-    cache.del(supi, function (err) {
-        if (err) throw err;
-        console.log('removed:', supi)
-      });
+    removeActiveUser(supi);
 }
 
 module.exports.retrieveAllUEendpoint = () => {
     const res = []
-    cache.getAll(function (err, data) {
-        if (err) throw err;
-        data.forEach(obj => {
-            res.push({supi: obj.key, ip: obj.data.ip, port: obj.data.port})
-        })
-    })
+    for (const [supi, ueInfoAndTimer] of activeUsers.entries()) {
+        res.push({ supi: supi, ip: ueInfoAndTimer.ueInformation.ip, port: ueInfoAndTimer.ueInformation.port })
+    }
     return res
 }
